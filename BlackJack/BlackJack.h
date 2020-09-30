@@ -12,8 +12,10 @@ void Betting();
 
 void Execute();
 
+void ExchangeBets(bool playerWon);
+
 int PickedCard();
 
-void Draw();
+void Draw(bool);
 
 int CardSum(std::vector<int> cards);
