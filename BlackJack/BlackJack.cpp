@@ -3,6 +3,7 @@
 #include <conio.h>
 #include "BlackJack.h"
 #include <string>
+#include <ctime>
 std::vector<int>cards {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 std::vector<int> playerCards{};
@@ -21,9 +22,11 @@ int dealerBet = 0;
 
 std::string win;
 
-bool startWith2Cards = true;
+bool startWith2Cards = false;
 int main()
 {
+    //Set rand to random at start of game, instead of inside PickedCard() so the dealer wich gets instantly dealt cards gets same cards everytime
+    srand((unsigned)time(0));
     do
     {
         if (playerCash <= 0)
@@ -63,13 +66,14 @@ int main()
 void Setup() 
 {
     //Setup stuff
-    playerBet = 0;
-    dealerBet = 0;
+    //Sets to -1, not to 0, that intertups the betting for next round
+    playerBet = -1;
+    dealerBet = -1;
     //Clear player cards
     playerCards.clear();
     //Clear dealer cards
     dealerCards.clear();
-
+    //Read that real blackjack starts with two cards, so I added an option for it
     if (startWith2Cards) {
         for (int i = 0; i < 2; i++) {
             playerCards.push_back(PickedCard());
@@ -84,36 +88,53 @@ void Player()
 {
     Draw();
     char input = _getch();
+    int k = PickedCard();
+    
 
     switch (input)
     {
+
         //Add a new card to the vector of cards
         case 'n':
-            playerCards.push_back(PickedCard());
+            //Check if it draws the 0 element, which is an ace, then ask if you want it to count as 1 or 11
+            if (k == 0) {
+                std::cout << "You got an ace, do you want it to count as 1 or 11?";
+                int j = 0;
+                std::cin >> j;
+                if (j == 1) {
+                    k = 1;
+                }
+                else if (j == 11) {
+                    k = 11;
+                }
+                else {
+                    k = 1;
+                }
+            }
+            //Add to the player cards, the picked card element from cards
+            playerCards.push_back(k);
             //Check if its over 21, then loose
             playerSum = CardSum(playerCards);
-            
-            
             if (playerSum > 21) 
             {
                 win = "bust";
                 state = execute;
+                dealerCash = dealerCash + playerBet;
+                playerCash = playerCash - playerBet;
                 Draw(); 
                 std::cout << "\n\nPress any key to continue...\n";
                 if (_getch()) {
                     state = setup;
                 }
-
             }
-            
             break;
         //Stand, exit out of player state, go to dealer
         case 's':
-            
             state = dealer;
             break;
         default:
-
+            //Nothing
+            int j = 0;
          break;
     }
 
@@ -128,19 +149,6 @@ void DealerTurn()
     {
         //Delcare the new card
         int newDealerCard = PickedCard();
-
-        //Check if ace, then check if its 11 is cloaser to 21 than 1 is
-        if (newDealerCard == 1) 
-        {
-            if ((CardSum(dealerCards) + 1) - 12 > (CardSum(dealerCards) + 11) - 12) {
-                //Dont change it
-            }
-            else 
-            {
-                //Set it to 11
-                newDealerCard = 11;
-            }
-        }
 
         dealerCards.push_back(newDealerCard);
 
@@ -163,7 +171,7 @@ void Betting()
         //Accept
         playerBet = bet;
     }
-
+    dealerBet = playerBet;
     if (dealerCash >= playerBet) {
         dealerBet = playerBet;
     }
@@ -188,19 +196,25 @@ void Execute() {
     }
     else if (playerSum == 21) {
         win = "player";
-        playerCash = playerCash + dealerBet;
-        dealerCash = dealerCash - dealerBet;
+        dealerCash = dealerCash - playerBet;
+        playerCash += playerBet;
     }
     else if (dealerSum == 21) {
         win = "dealer";
         dealerCash = dealerCash + playerBet;
         playerCash = playerCash - playerBet;
     }
+    else if (playerSum < 21 && dealerSum > 21) 
+    {
+        win = "player";
+        dealerCash = dealerCash - playerBet;
+        playerCash +=  playerBet;
+    }
     else if (playerSum > dealerSum) 
     {
         win = "player";
-        playerCash = playerCash + dealerBet;
-        dealerCash = dealerCash - dealerBet;
+        dealerCash = dealerCash - playerBet;
+        playerCash += playerBet;
     }
     else if (dealerSum > playerSum) {
         win = "dealer";
@@ -219,8 +233,9 @@ void Execute() {
 //Returns a random number from the card vector
 int PickedCard() 
 {
-    int k = rand() % cards.size();
-    return cards[k];
+    
+    int j = rand() % cards.size();
+    return cards[j];
 }
 
 void Draw() 
@@ -236,11 +251,9 @@ void Draw()
     std::cout << "[N] for new card\n";
     std::cout << "[S] to stand\n" << "\n\n";
 
-    
     if (state == betting) 
     {
         std::cout << "Place your bet: ";
-
         return;
     }
 
@@ -278,12 +291,12 @@ void Draw()
     {
         std::cout << "\n\nPlayer's turn, stand or new card?";
     }
-
     std::cout << "\nPlayer cards: \n";
-    //Draw player cards, temp display
+    //Draw player cards, temp display 
     for (int i = 0; i < playerCards.size(); i++) {
         std::cout << playerCards[i] << ", ";
     }
+
 }
 
 int CardSum(std::vector<int> cards) {
