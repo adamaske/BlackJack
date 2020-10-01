@@ -2,6 +2,7 @@
 #include <vector>
 #include <conio.h>
 #include "BlackJack.h"
+#include <string>
 std::vector<int>cards {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
 std::vector<int> playerCards{};
@@ -18,10 +19,11 @@ int dealerCash = 100;
 int playerBet = 0;
 int dealerBet = 0;
 
+std::string win;
+
+bool startWith2Cards = true;
 int main()
 {
-    
-
     do
     {
         if (playerCash <= 0)
@@ -68,23 +70,19 @@ void Setup()
     //Clear dealer cards
     dealerCards.clear();
 
+    if (startWith2Cards) {
+        for (int i = 0; i < 2; i++) {
+            playerCards.push_back(PickedCard());
+            dealerCards.push_back(PickedCard());
+        }
+    }
+
     state = betting;
 }
 
 void Player() 
 {
-    system("cls");
-    //Draw the players cards
-    std::cout << "Player cards: " << std::endl;
-    for (int i = 0; i < playerCards.size(); i++)
-    {
-        std::cout << "|" << playerCards[i] << "|";
-    }
-    
-    std::cout << "" << std::endl;
-    //Check if player wants more cards
-    std::cout << "Pick card or stand? " << std::endl;
-    //Delcare the new input
+    Draw();
     char input = _getch();
 
     switch (input)
@@ -94,15 +92,24 @@ void Player()
             playerCards.push_back(PickedCard());
             //Check if its over 21, then loose
             playerSum = CardSum(playerCards);
-            if (playerSum > 21) {
-                //Lost
-                std::cout << "You lost by over 21" << std::endl;
-                ExchangeBets(false);
-                state = setup;
+            
+            
+            if (playerSum > 21) 
+            {
+                win = "bust";
+                state = execute;
+                Draw(); 
+                std::cout << "\n\nPress any key to continue...\n";
+                if (_getch()) {
+                    state = setup;
+                }
+
             }
+            
             break;
         //Stand, exit out of player state, go to dealer
         case 's':
+            
             state = dealer;
             break;
         default:
@@ -137,20 +144,8 @@ void DealerTurn()
 
         dealerCards.push_back(newDealerCard);
 
-
-        //dealerSum = CardSum(dealerCards);
-        ////Check if dealer lost;
-        //if (dealerSum > 21) 
-        //{
-        //    std::cout << "Dealer lost by over 21" << std::endl;
-        //    state = setup;
-        //    std::cout << "Press any key to continue..." << std::endl;
-        //    if (_getch()) {
-        //        state = execute;
-        //        return;
-        //    }
-        //    return;
-        //}
+        dealerSum = CardSum(dealerCards);
+        playerSum = CardSum(playerCards);
     } while (dealerSum < playerSum);
 
     state = execute;
@@ -158,14 +153,15 @@ void DealerTurn()
 
 void Betting() 
 {
-    std::cout << "Place your bet: ";
+    Draw();
     //Place the inuput in k, then check if its valid
-    double k = 0;
-    std::cin >> k;
+    int bet = 0;
+    
+    std::cin >> bet;
 
-    if (k <= playerCash) {
+    if (bet <= playerCash) {
         //Accept
-        playerBet = k;
+        playerBet = bet;
     }
 
     if (dealerCash >= playerBet) {
@@ -176,84 +172,118 @@ void Betting()
 }
 
 void Execute() {
-   
-    state = setup;
-
+    //Fresh sums
     playerSum = CardSum(playerCards);
     dealerSum = CardSum(dealerCards);
 
-    bool pWon;
-    //Check draw
-    if (playerSum == dealerSum || playerSum > 21 && dealerSum > 21 || playerSum == 21 && dealerSum == 21) {
-        std::cout << "It's a draw!";
-    }
-    //Check player bust
-    if (playerSum > 21) 
+    //Check who wins, then get exchange values
+    if (playerSum == dealerSum || playerSum == 21 && dealerSum == 21)
     {
-
+        win = "draw";
     }
-    //who is closets to 21, using abs to get the absoulute, if its -3 goees to 3, and if dealer has -2 it becomes 2, then win
-    if (playerSum > dealerSum) {
-        //Player won
-        std::cout << "Player won!" << std::endl;
-        //Put the dealer bet in the playersCash
-        playerCash = playerCash + dealerBet;
-        dealerCash = dealerCash - dealerBet;
-        pWon = true;
-    }
-    else {
-        //Delaer won
-        std::cout << "Dealer won!" << std::endl;
-        //Players bet in the dealers cash
+    else if (playerSum > 21) {
+        win = "bust";
         dealerCash = dealerCash + playerBet;
         playerCash = playerCash - playerBet;
-        pWon = false;
+    }
+    else if (playerSum == 21) {
+        win = "player";
+        playerCash = playerCash + dealerBet;
+        dealerCash = dealerCash - dealerBet;
+    }
+    else if (dealerSum == 21) {
+        win = "dealer";
+        dealerCash = dealerCash + playerBet;
+        playerCash = playerCash - playerBet;
+    }
+    else if (playerSum > dealerSum) 
+    {
+        win = "player";
+        playerCash = playerCash + dealerBet;
+        dealerCash = dealerCash - dealerBet;
+    }
+    else if (dealerSum > playerSum) {
+        win = "dealer";
+        dealerCash = dealerCash + playerBet;
+        playerCash = playerCash - playerBet;
     }
 
     //Find who won
-    Draw(pWon);
-
-    std::cout << "Press any button to continue.." << std::endl;
+    Draw();
+    //Wait for player to press something before restarting
+    std::cout << "\nPress any button to continue.." << std::endl;
     if (_getch()) {
         state = setup;
     }
 }
-
+//Returns a random number from the card vector
 int PickedCard() 
 {
-    int k = rand() % cards.size() + 1;
-    return k;
+    int k = rand() % cards.size();
+    return cards[k];
 }
 
-void Draw(bool playerWon) 
+void Draw() 
 {
+    //Get fresh sums
+    playerSum = CardSum(playerCards);
+    dealerSum = CardSum(dealerCards);
     system("cls");
-    //Cash
-    std::cout << "Player cash: " << playerCash << "\t" << "Dealer cash: " << dealerCash << std::endl;
+    //New drawing
+    std::cout << "Blackjack" << "\n\n\n";
 
-    //Player cards
-    std::cout << "Player cards: " << std::endl;
-    for (int i = 0; i < playerCards.size(); i++) 
-    {
-        std::cout << "|" << playerCards[i] << "|";
-    }
-   
-    std::cout << "\t" << "Dealer cards: ";
-    for (int i = 0; i < dealerCards.size(); i++)
-    {
-        std::cout << "|" << dealerCards[i] << "|";
-    }
+    std::cout << "Player cash: " << playerCash << "\t" << "\tDealer cash: " << dealerCash << "\n\n";
+    std::cout << "[N] for new card\n";
+    std::cout << "[S] to stand\n" << "\n\n";
 
-    std::cout << std::endl << "Player bet: " << playerBet << "\t" << "Dealer bet: " << dealerBet << std::endl;
     
-    std::cout << "Player sum: " << CardSum(playerCards) << "\t" <<"Dealer sum: " << CardSum(dealerCards) << std::endl << std::endl; 
-    if (playerWon) {
-        std::cout << "Player won!" << std::endl;
-    }
-    else {
-        std::cout << "Dealer won!" << std::endl;
+    if (state == betting) 
+    {
+        std::cout << "Place your bet: ";
+
+        return;
     }
 
+    std::cout << "Player bet: " << playerBet << "\t" << "Dealer bet: " << dealerBet << "\n\n\n";
+
+    if (state == execute) 
+    {
+        if (win == "player") 
+        {
+            std::cout << "Player won!\n" << "Player gets " << dealerBet << "!";
+        }
+        else if (win == "dealer") 
+        {
+            std::cout << "Dealer won!\n" << "Dealer gets " << playerBet << "!";
+        }
+        else if (win == "draw") 
+        {
+            std::cout << "It's a draw!";
+        }
+        else if (win == "bust") 
+        {
+            std::cout << "Player bust, dealer wins!";
+        }
+    }
+
+    std::cout << "\nYour sum: " << playerSum << "\tDealer sum: " << dealerSum << "\n\n";
+
+    std::cout << "\nDealer cards: \n";
+    //Draw dealer cards, temp display
+    for (int i = 0; i < dealerCards.size(); i++) {
+        std::cout << dealerCards[i] << ", ";
+    }
+
+    if (state == player)
+    {
+        std::cout << "\n\nPlayer's turn, stand or new card?";
+    }
+
+    std::cout << "\nPlayer cards: \n";
+    //Draw player cards, temp display
+    for (int i = 0; i < playerCards.size(); i++) {
+        std::cout << playerCards[i] << ", ";
+    }
 }
 
 int CardSum(std::vector<int> cards) {
