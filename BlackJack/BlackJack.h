@@ -6,6 +6,8 @@ void Setup();
 
 void Player();
 
+void AnyKey();
+
 void DealerTurn();
 
 void Betting();
@@ -16,4 +18,6 @@ int PickedCard();
 
 void Draw();
 
-int CardSum(std::vector<int> cards);
+void SetSums();
+
+
