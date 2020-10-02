@@ -170,7 +170,7 @@ void Player()
     }
 
 }
-
+//just continues when a key is presseds
 void AnyKey() {
     std::cout << "\n\nPress any key to continue...\n";
     if (_getch()) {
