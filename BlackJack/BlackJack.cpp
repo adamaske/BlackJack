@@ -18,7 +18,7 @@ struct Card {
     void SetupCard(int v) {
         value = v;
         face = faces[v-1];
-        if (v - 1 > 9) {
+        if (v > 10) {
             value = 10;
         }
     }
@@ -95,7 +95,6 @@ int main()
 
 void Setup() 
 {
-    //Setup stuff
     //Sets starting bids at 10, as per the rules
     playerBet = 10;
     dealerBet = 10;
@@ -124,19 +123,13 @@ void Player()
     {
         //Add a new card to the vector of cards
         case 'n':
-            //if its an Ace ask to change it, if wrong input, sets it to 1
+            //Check if its an ace, if player choose 2 for 11 as the value, change the drawn card 
+            //Ignore for wrong input
             if (k == 1) {
                 std::cout << "You got drew an ace, do you want it to count as 1 or 11? \n[1] for 1 and [2] for 11\n";
                 char answer = _getch();
-                switch (answer) {
-                case '1':
-                    c.value = 1;
-                    break;
-                case '2':
+                if (answer == '2') {
                     c.value = 11;
-                    break;
-                default:
-                    break;
                 }
             }
             //Add to the player cards the card initalized above
@@ -146,19 +139,21 @@ void Player()
             if (playerSum > 21) 
             {
                 win = "bust";
-                state = execute;
                 dealerCash = dealerCash + playerBet;
-                playerCash = playerCash - playerBet;
-                Draw(); 
-                AnyKey();
-            }
-            else if (playerSum == 21) {
-                win = "player";
+                playerCash = playerCash - playerBet;    
                 state = execute;
-                dealerCash = dealerCash - playerBet;
-                playerCash += playerBet;
                 Draw();
                 AnyKey();
+                
+            }
+            if (playerSum == 21) {
+                win = "player";
+                dealerCash = dealerCash - playerBet;
+                playerCash += playerBet;
+                state = execute;
+                Draw();
+                AnyKey();
+                
             }
             break;
         //Stand, exit out of player state, go to dealer
