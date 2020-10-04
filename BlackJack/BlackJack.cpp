@@ -17,14 +17,15 @@ struct Card {
     //Also checks if the value is a Jack, Queen or King, give it the correct face from the value, then set the value back to 10, due to that they should only be 10s
     void SetupCard(int v) {
         value = v;
-        face = faces[v-1];
-        if (v > 10) {
+        long j = value - 1;
+        face = faces[j];
+        if (j > 10) {
             value = 10;
         }
     }
 };
-//Declaring the vectors
-std::vector<Card> myCards{};
+//Declaring the vectors;
+std::vector<Card> myCards;
 std::vector<Card> dealerCards{};
 
 //keeping sums in own ints
@@ -43,6 +44,7 @@ int dealerBet = 0;
 std::string win;
 int main()
 {
+
     //Intro to blackjack
     std::cout << "Welocome to blackjack!\n";
     std::cout << "The game proceeds as such: \n" << "1.You will pick your cards, when you are happy with your collection you can stand! If you go above 21, you loose.\n"
@@ -183,12 +185,12 @@ void DealerTurn()
         int newDealerCard = PickedCard();
         Card c;
         c.SetupCard(newDealerCard);
-        //Check if its an ace, then check if 11 or 1 gets it futher away from 1, then pick the other one
+        //Check if its an ace, then check if 11 or 1 gets it further away from 1, then pick the other one
         if (newDealerCard == 1) {
             int k = dealerSum + 1;
             int j = dealerSum + 11;
             //Takes the absolute/whole number to k and j - 21, to find what is the lowest, without negative numbers interfering, if its 16 then ace
-            //17 - 21 = -4, then four, but if its +11, 27 - 21 = 6, so the lower wins and the otherway if its already 21, then 22-21 is 1, so 21 + 11 - 11 is 21 and 1 gets picked
+            //17 - 21 = -4, then four, but if its +11, 27 - 21 = 6, so the lower wins and the other way if its already 21, then 22-21 is 1, so 21 + 11 - 11 is 21 and 1 gets picked
             if (abs(k - 21) < abs(j -21)) {
                 c.value = 1;
             }
